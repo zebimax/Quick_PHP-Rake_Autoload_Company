@@ -50,7 +50,7 @@ class AutoLoader
         $filesContent = '';
         $files = $this->getFiles(dirname(__FILE__));
         foreach ($files as $class => $path) {
-            $filesContent .= sprintf('\'%s\' => \'%s\',', $class, $path);
+            $filesContent .= sprintf('\'%s\'=>\'%s\',%s', $class, $path, PHP_EOL);
         }
         fputs($fopen, $filesContent . $this->getContent(self::CLASS_MAP_END_PART));
         fclose($fopen);
@@ -72,7 +72,7 @@ class AutoLoader
     {
         switch ($part) {
             case self::CLASS_MAP_BEGIN_PART:
-                $content = '<?php return [';
+                $content = '<?php return [' . PHP_EOL;
                 break;
             case self::CLASS_MAP_END_PART:
                 $content = '];';
@@ -84,19 +84,20 @@ class AutoLoader
         return $content;
     }
 
-    private function getFiles($dirName)
+    private function getFiles($dirName, $namespace = '')
     {
         $files = [];
+        $separator = DIRECTORY_SEPARATOR;
+        $dir = "$dirName$separator";
         foreach (scandir($dirName) as $file) {
             if (in_array($file, $this->scippedDirs)) {
                 continue;
             }
             if (preg_match(self::PATTERN_FOR_CLASS_MAP, $file)) {
-                $separator = DIRECTORY_SEPARATOR;
-                $files[str_replace('.php', '', $file)] = "$dirName$separator$file";
+                $files[$namespace.str_replace('.php', '', $file)] = "$dir$file";
             }
             if (is_dir($file)) {
-                $files = array_merge($files, $this->getFiles($file));
+                $files = array_merge($files, $this->getFiles("$dir$file", "$file$separator"));
             }
         }
         return $files;
